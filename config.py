@@ -3,3 +3,11 @@
 @Author: 吕明伟
 @Date: 2021-4-6
 """
+
+class Config:
+    user_id_embedding_output_dim = 32
+    gender_embedding_output_dim = 16
+    age_embedding_output_dim = 16
+    occupation_embedding_output_dim = 16
+
+    embedding_dim = 32
