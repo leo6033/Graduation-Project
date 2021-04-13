@@ -18,7 +18,7 @@ class TextCNN(object):
 
     def get_model(self):
         input = Input((self.maxlen,))
-        embedding = Embedding(self.max_features, self.embedding_dims, input_length=self.maxlen)(input)
+        embedding = Embedding(self.max_features, self.embedding_dims, input_length=self.maxlen, mask_zero=True)(input)
         convs = []
         for kernel_size in [3, 4, 5]:
             c = Conv1D(128, kernel_size, activation='relu')(embedding)
