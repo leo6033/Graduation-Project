@@ -17,6 +17,7 @@ import tensorboard
 from tensorflow import keras
 from tensorflow.keras import Sequential, layers, optimizers, losses
 from sklearn.model_selection import StratifiedKFold, train_test_split
+import tqdm
 
 from TextCNN import TextCNN
 from config import Config
@@ -168,7 +169,7 @@ class RecomendSystem(object):
         self.dataPreProcesser.load_data()
         self.dataPreProcesser.process_data()
         print("################## finish preprocess data ###################")
-
+        self.losses = {'train': [], 'test': []}
         self.net = Net()
         self.net.build(input_shape=[(None, 1), (None, 1), (None, 1), (None, 1), (None, 1), (None, Config.generes_max_len), (None, Config.title_max_len)])
         self.optimizer = keras.optimizers.Adam(Config.LEARNING_RATE)
@@ -199,9 +200,10 @@ class RecomendSystem(object):
             yield Xs[start:end], ys[start:end]
 
     def train(self):
-        mse = tf.keras.losses.MeanSquaredError()
+        # mse = tf.keras.losses.MeanSquaredError()
         x, y = self.gen_data()
-        for _ in range(Config.EPOCH):
+        print("start train")
+        for epoch in range(Config.EPOCH):
             train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2, random_state=2021)
             batch_num = len(train_x) // Config.BATCH_SIZE
             train_batches = self.get_batches(train_x, train_y, Config.BATCH_SIZE)
@@ -210,18 +212,30 @@ class RecomendSystem(object):
             if True:
                 start = time.time()
                 avg_loss = tf.keras.metrics.Mean('loss', dtype=tf.float32)
-                for batch in range(batch_num):
+                for batch in tqdm.tqdm(range(batch_num)):
                     batch_x, batch_y = next(train_batches)
                     inputs = self.dataPreProcesser.gen_input(batch_x)
                     
                     with tf.GradientTape() as tape:
                         predict_y = self.net(inputs)
-                        loss = mse(batch_y, predict_y)
-                        
+                        loss = self.ComputeLoss(batch_y, predict_y)
+                        self.ComputeMetrics(batch_y, predict_y)
 
                     grads = tape.gradient(loss, self.net.trainable_variables)
                     self.optimizer.apply_gradients(zip(grads, self.net.trainable_variables))
-                
+                    # print(loss.numpy())
+                    self.losses['train'].append(loss.numpy())
+
+                    if self.optimizer.iterations % Config.log_freq == 0:
+                        rate = Config.log_freq / (time.time() - start)
+                        print('Step #{}\tEpoch {:>3} Batch {:>4}/{}   Loss: {:0.6f} mae: {:0.6f} ({} steps/sec)'.format(
+                                self.optimizer.iterations.numpy(),
+                                epoch,
+                                batch,
+                                batch_num,
+                                loss.numpy(), (self.ComputeMetrics.result()), rate))
+                        self.ComputeMetrics.reset_states()
+                        start = time.time()
                 
 
 

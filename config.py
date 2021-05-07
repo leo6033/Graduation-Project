@@ -27,6 +27,7 @@ class Config:
     title_max_len = 16
     generes_max_len = 6
 
-    EPOCH = 1
+    EPOCH = 5
     BATCH_SIZE = 256
-    LEARNING_RATE = 0.01
+    LEARNING_RATE = 0.008
+    log_freq = 100
