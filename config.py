@@ -6,6 +6,7 @@
 
 class Config:
     user_id_embedding_output_dim = 32
+    zip_code_embedding_output_dim = 16
     gender_embedding_output_dim = 16
     age_embedding_output_dim = 16
     occupation_embedding_output_dim = 16
@@ -21,7 +22,7 @@ class Config:
     gender_num = 2
     age_num = 7
     occupation_num = 21
-
+    zip_code_num = None
     title_word_num = None
 
     title_max_len = 16
@@ -29,5 +30,5 @@ class Config:
 
     EPOCH = 5
     BATCH_SIZE = 256
-    LEARNING_RATE = 0.008
-    log_freq = 100
+    LEARNING_RATE = 0.01
+    log_freq = 1000
