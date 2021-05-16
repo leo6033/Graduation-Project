@@ -57,7 +57,7 @@ class Net(keras.Model):
 
         # movie net
         self.movie_id_embedding = keras.Sequential([
-            layers.Embedding(Config.move_id_num, Config.move_id_embedding_output_dim, input_length=1, name='embedding'),
+            # layers.Embedding(Config.move_id_num, Config.move_id_embedding_output_dim, input_length=1, name='embedding'),
             layers.Dense(Config.embedding_dim, kernel_initializer='he_normal', name='movie_id_fc')
         ], name='movie_id_embedding')
 
@@ -89,7 +89,7 @@ class Net(keras.Model):
 
         title = self.textCNN(inputs[6])
 
-        movie = layers.concatenate([movie_id[0], movie_categories, title])
+        movie = layers.concatenate([movie_id, movie_categories, title])
 
         user = layers.concatenate([user_id, gender, age, occupation])[0]
         user = tf.nn.leaky_relu(self.fc1(user))
@@ -137,12 +137,12 @@ class DataProcesser(object):
     
     def gen_input(self, data):
         inputs = []
-        # tmp = data['MovieID'].apply(lambda x: list(self.i2v.wv[str(x)]))
-        for col in ['UserID', 'Gender', 'Age', 'Occupation', 'MovieID']:
+        tmp = data['MovieID'].apply(lambda x: list(self.i2v.wv[str(x)]))
+        for col in ['UserID', 'Gender', 'Age', 'Occupation']:
             inputs.append(tf.expand_dims(data[col], axis=0))
 
 
-        # inputs.append(tf.convert_to_tensor(np.array(list(tmp.array))))
+        inputs.append(tf.convert_to_tensor(np.array(list(tmp.array))))
 
         for col in ['Genres', 'Title']:
             inputs.append(tf.keras.preprocessing.sequence.pad_sequences(
@@ -198,12 +198,12 @@ class RecomendSystem(object):
         print("################## finish preprocess data ###################")
         self.losses = {'train': [], 'test': []}
         self.net = Net()
-        self.net.build(input_shape=[(None, 1), (None, 1), (None, 1), (None, 1), (None, 1), (None, Config.generes_max_len), (None, Config.title_max_len)])
+        self.net.build(input_shape=[(None, 1), (None, 1), (None, 1), (None, 1), (None, dim), (None, Config.generes_max_len), (None, Config.title_max_len)])
         self.optimizer = keras.optimizers.Adam(Config.LEARNING_RATE)
         self.ComputeLoss = tf.keras.losses.MeanSquaredError()
         self.ComputeMetrics = tf.keras.metrics.MeanAbsoluteError()
 
-        self.log_dir = f'./logs/embeddings/{dim}'
+        self.log_dir = f'./logs/{dim}'
         self.summary_writer = tf.summary.create_file_writer(self.log_dir)
 
         self.MODEL_DIR = "./models"
@@ -298,8 +298,7 @@ class RecomendSystem(object):
 
 if __name__ == '__main__':
     for dim in [32, 64, 128]:
-        Config.move_id_embedding_output_dim = dim
-        recomendSystem = RecomendSystem()
+        recomendSystem = RecomendSystem(dim)
         recomendSystem.train()
     # dataPreProcesser = DataProcesser()
     # dataPreProcesser.load_data()
